@@ -18,7 +18,7 @@ const eventSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    catagory: {
+    category: {
         type: String,
         required: true
     },
@@ -30,11 +30,11 @@ const eventSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    tiketPrice: {
+    ticketPrice: {
         type: Number,
         required: true
     },
-    imageUrl: {
+    image: {
         type: String,
         required: true
     },

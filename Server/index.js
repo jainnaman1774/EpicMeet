@@ -14,8 +14,8 @@ app.use(express.json());
 
 //Routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/events', eventRoutes);
-// app.use('/api/bookings', bookingRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('MongoDB connected'))
