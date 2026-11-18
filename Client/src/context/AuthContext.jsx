@@ -1,65 +1,62 @@
-import React from 'react'
-export const AuthContext = React.createContext()
+import React from "react";
+import api from "../utils/axios";
+
+export const AuthContext = React.createContext();
+
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = React.useState(null)
-  const [loading, setLoading] = React.useState(true)
+  // Read synchronously so `user` is correct on the very first render
+  const [user, setUser] = React.useState(getStoredUser);
 
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setLoading(false)
-    }, [])
+  // Works for flat { role, email, token } and nested { user, token } responses
+  const saveSession = (data) => {
+    const { token, user: nested, ...rest } = data;
+    const userData = nested || rest;
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(userData);
+  };
 
+  const login = async (email, password) => {
+    const { data } = await api.post("/auth/login", { email, password });
+    saveSession(data);
+    return data;
+  };
 
-    const login = async(email,password) => {
-      try{
-        const {data} = await api.post('/auth/login', {email,password})
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        localStorage.setItem('token', data.token)
-        return data
-      }catch(err){
-        console.error('Login failed:', err)
-        throw err
-      }
-    }
+  const register = async (name, email, password) => {
+    const { data } = await api.post("/auth/register", {
+      name,
+      email,
+      password,
+    });
+    return data;
+  };
 
-    const register = async(name,email,password) => {
-      try{
-        const {data} = await api.post('/auth/register', {name,email,password})
-        setUser(data)
-        return data
-        }catch(err){
-            console.error('Registration failed:', err)
-            throw err
-        }
-    }
+  const verifyOtp = async (email, otp) => {
+    const { data } = await api.post("/auth/verify-otp", { email, otp });
+    saveSession(data);
+    return data;
+  };
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
 
-    const verifyOtp = async() => {
-      try{
-        const {data} = await api.post('/auth/verify-otp')
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        localStorage.setItem('token', data.token)
-        return data
-      }catch(err){
-        console.error('OTP verification failed:', err)
-        throw err
-      }}
-
-      const logout = () => {
-        setUser(null)
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-      }
-
-    return (
-      <AuthContext.Provider value={{ user, loading, login, logout, verifyOtp, register }}>
-        {children}
-        </AuthContext.Provider>
-    )
-}
+  return (
+    <AuthContext.Provider
+      value={{ user, loading: false, login, register, verifyOtp, logout }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
